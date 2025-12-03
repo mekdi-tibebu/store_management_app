@@ -1,0 +1,36 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "shoppingapp-niv0415",
+          "appId": "1:938486462623:android:b042921d17ccd33e134aaa",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "shoppingapp-niv0415",
+          "configurations": {
+            "android": "1:938486462623:android:b042921d17ccd33e134aaa",
+            "web": "1:938486462623:web:a6f01f7346085007134aaa"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
