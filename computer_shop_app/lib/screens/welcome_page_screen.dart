@@ -51,7 +51,7 @@ class WelcomePageScreen extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF003399), // ✅ updated: use backgroundColor instead of primary
+                  backgroundColor: const Color(0xFF003399), 
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

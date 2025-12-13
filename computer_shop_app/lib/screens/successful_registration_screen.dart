@@ -220,25 +220,3 @@ class SuccessfulRegistrationScreen extends StatelessWidget {
     );
   }
 }
-
-// To implement the OTP input fields, you would typically use a package
-// like `otp_text_field` or build custom `TextField` widgets.
-// For example:
-/*
-import 'package:otp_text_field/otp_text_field.dart';
-import 'package:otp_text_field/style.dart';
-
-// In your Column for OTP input:
-OTPTextField(
-  length: 4,
-  width: MediaQuery.of(context).size.width,
-  fieldWidth: 50,
-  style: const TextStyle(fontSize: 18),
-  textFieldAlignment: MainAxisAlignment.spaceAround,
-  fieldStyle: FieldStyle.box,
-  onCompleted: (pin) {
-    print("Completed: $pin");
-    // You would then submit the PIN for verification
-  },
-),
-*/

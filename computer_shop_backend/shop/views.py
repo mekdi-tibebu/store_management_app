@@ -1,7 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
-
 from rest_framework import viewsets
 from .models import MaintenanceJob, ComputerSale, PasswordResetOTP, SoldItem, EmailVerificationOTP, Coupon, Subscription
 from .serializers import MaintenanceJobSerializer, ComputerSaleSerializer, SoldItemSerializer
@@ -21,7 +18,7 @@ from django.contrib.auth import authenticate
 from django.conf import settings
 import time
 from django.http import HttpResponse
-from django.shortcuts import render, redirect # Import redirect
+from django.shortcuts import render, redirect 
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage
@@ -400,34 +397,6 @@ def validate_coupon(request):
             "error": "Invalid coupon code"
         }, status=200)
 
-
-# @api_view(["POST"])
-# @permission_classes([IsAuthenticated])
-# def start_payment(request):
-#     """Start a Chapa payment and return the checkout URL"""
-#     try:
-#         user = request.user
-#         amount = request.data.get("amount", 100)
-
-#         print("Starting payment for:", user.username)
-#         print("Amount received:", amount)
-
-#         response = create_chapa_payment(user, amount)
-#         print("Chapa API Response:", response)
-
-#         checkout_url = response.get("data", {}).get("checkout_url")
-
-#         if checkout_url:
-#             return Response({"payment_url": checkout_url})
-#         return Response({"error": "Failed to create payment"}, status=400)
-
-#     except Exception as e:
-#         import traceback
-#         print("❌ ERROR in start_payment:", str(e))
-#         traceback.print_exc()
-#         return Response({"error": str(e)}, status=500)
-
-
 @api_view(["GET", "POST"])
 def payment_callback(request):
     """Chapa will hit this endpoint after payment"""
@@ -435,23 +404,6 @@ def payment_callback(request):
     tx_ref = request.data.get("tx_ref") or request.GET.get("trx_ref")
     if not tx_ref:
         return Response({"error": "Transaction reference missing"}, status=400)
-
-    # 🔹 Verify payment with Chapa API
-    # headers = {"Authorization": f"Bearer {CHAPA_SECRET_KEY}"}
-    # r = requests.get(
-    #     f"https://api.chapa.co/v1/transaction/verify/{tx_ref}",
-    #     headers=headers
-    # )
-    # result = r.json()
-
-    # if result.get("status") == "success":
-    #     # Activate subscription for the user
-    #     user = request.user  # may need to identify via tx_ref
-    #     sub, _ = Subscription.objects.get_or_create(user=user)
-    #     sub.activate(tx_ref)
-    #     return Response({"message": "Payment verified & subscription activated"})
-
-    # return Response({"error": "Payment verification failed"}, status=400)
     try:
         # Assuming format "txn-<user_id>-<timestamp>"
         user_id = int(tx_ref.split("-")[1])
@@ -509,47 +461,6 @@ def confirm_payment(request):
         "error": "Payment verification failed",
         "details": result
     }, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-# Step 2: Confirm payment after callback
-# @api_view(["POST"])
-# @permission_classes([IsAuthenticated])
-# def confirm_payment(request):
-#     user = request.user
-#     transaction_id = request.data.get("transaction_id")
-
-#     if not transaction_id:
-#         return Response({"error": "Transaction ID required"}, status=400)
-
-#     # 🔹 TODO: verify transaction_id with Telebirr API
-
-#     sub, _ = Subscription.objects.get_or_create(user=user)
-#     sub.activate(transaction_id)
-
-#     return Response({
-#         "message": "Subscription activated",
-#         "expiry_date": sub.expiry_date
-#     })
-
-
-# @api_view(["POST"])
-# @permission_classes([IsAuthenticated])
-# def confirm_payment(request):
-#     telebirr_payment_url = "https://app.telebirr.com/pay?transaction_id=12345"
-#     return Response({
-#         "payment_url": telebirr_payment_url
-#     })
-#     user = request.user
-#     transaction_id = request.data.get("transaction_id")
-
-#     if not transaction_id:
-#         return Response({"error": "Transaction ID required"}, status=400)
-#     # 🔹 TODO: Verify payment with Telebirr API before confirming
-#     sub, _ = Subscription.objects.get_or_create(user=user)
-#     sub.activate(transaction_id)
-
-#     return Response({"message": "Subscription activated", "expiry_d    await prefs.remove("pending_tx_ref")
 
 @api_view(["POST"])
 @csrf_exempt
@@ -659,23 +570,6 @@ def signup(request):
     except Exception as e:
         print(f"Signup error: {str(e)}")
         return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(["POST"])
-# def login(request):
-#     username = request.data.get("username")
-#     password = request.data.get("password")
-
-#     user = authenticate(username=username, password=password)
-#     if user is not None:
-#         # generate or get token
-#         token, _ = Token.objects.get_or_create(user=user)
-#         return Response({
-#             "token": token.key,
-#             "username": user.username,
-#             "email": user.email,
-#         })
-#     else:
-#         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(["POST"])
 def login(request):
@@ -896,27 +790,6 @@ def send_reset_otp(request):
 
     return Response({"message": "OTP sent successfully"})
 
-# def verify_otp_and_reset(request):
-#     email = request.POST.get('email')
-#     otp = request.POST.get('otp')
-#     new_password = request.POST.get('new_password')
-
-#     try:
-#         user = User.objects.get(email=email)
-#         otp_obj = PasswordResetOTP.objects.get(user=user, otp=otp, verified=False)
-#     except (User.DoesNotExist, PasswordResetOTP.DoesNotExist):
-#         return JsonResponse({"error": "Invalid OTP"}, status=400)
-
-#     if otp_obj.expires_at < timezone.now():
-#         return JsonResponse({"error": "OTP expired"}, status=400)
-
-#     user.set_password(new_password)
-#     user.save()
-
-#     otp_obj.verified = True
-#     otp_obj.save()
-
-#     return JsonResponse({"message": "Password reset successfully"})
 @api_view(['POST'])
 @csrf_exempt
 def verify_reset_otp(request):

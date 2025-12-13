@@ -4,8 +4,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 
-# Create your models here.
-
 class Subscription(models.Model):
     SUBSCRIPTION_TYPE_CHOICES = [
         ('lifetime', 'Lifetime Access'),
