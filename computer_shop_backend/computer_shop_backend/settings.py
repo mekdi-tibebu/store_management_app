@@ -30,7 +30,7 @@ DEFAULT_FROM_EMAIL = 'Store Management <storemanagingapp@gmail.com>'
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "store_management_app.onrender.com"
+    "computer_shop_backend.onrender.com"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
