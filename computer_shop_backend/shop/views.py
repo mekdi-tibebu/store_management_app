@@ -853,6 +853,69 @@ class SoldItemViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SoldItem.objects.all().order_by('-sold_at')
     serializer_class = SoldItemSerializer
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_to_maintenance(request, sale_id):
+    """Create a MaintenanceJob for an existing ComputerSale and mark the computer as in maintenance."""
+    try:
+        comp = ComputerSale.objects.get(id=sale_id)
+    except ComputerSale.DoesNotExist:
+        return Response({'error': 'Computer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    customer_name = request.data.get('customer_name', 'Store')
+    reported_issue = request.data.get('reported_issue', 'No issue provided')
+    notes = request.data.get('notes', '')
+
+    # Create maintenance job linked to this computer
+    job = MaintenanceJob.objects.create(
+        customer_name=customer_name,
+        computer=comp,
+        computer_model=comp.model,
+        reported_issue=reported_issue,
+        notes=notes,
+        status='Pending'
+    )
+
+    # Mark computer as in maintenance
+    comp.status = 'Maintenance'
+    comp.save()
+
+    job_serializer = MaintenanceJobSerializer(job)
+    comp_serializer = ComputerSaleSerializer(comp)
+    return Response({'maintenance_job': job_serializer.data, 'computer': comp_serializer.data}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def return_from_maintenance(request, job_id):
+    """Mark a MaintenanceJob as completed and return linked computer back to inventory (Available)."""
+    try:
+        job = MaintenanceJob.objects.get(id=job_id)
+    except MaintenanceJob.DoesNotExist:
+        return Response({'error': 'Maintenance job not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Update job status and completion date
+    job.status = 'Completed'
+    job.date_completed = timezone.now()
+    job.save()
+
+    # If there's a linked computer, mark it available again
+    computer = job.computer
+    if computer:
+        # Only change status if it was Maintenance - avoid overriding Sold/Reserved
+        if str(computer.status).lower() == 'maintenance' or computer.status == 'Maintenance':
+            computer.status = 'Available'
+            computer.save()
+
+    job_serializer = MaintenanceJobSerializer(job)
+    comp_serializer = ComputerSaleSerializer(computer) if computer else None
+    result = {'maintenance_job': job_serializer.data}
+    if comp_serializer:
+        result['computer'] = comp_serializer.data
+
+    return Response(result, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 @csrf_exempt
 def send_reset_otp(request):
