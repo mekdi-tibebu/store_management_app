@@ -30,6 +30,9 @@ router.register(r'sold-items', SoldItemViewSet, basename='solditem')
 
 urlpatterns = [
     path('', include(router.urls)),
+    # Computer maintenance helpers
+    path('computer-sales/<int:sale_id>/send-to-maintenance/', send_to_maintenance, name='send_to_maintenance'),
+    path('maintenance-jobs/<int:job_id>/return-to-inventory/', return_from_maintenance, name='return_from_maintenance'),
     path("check-subscription/", check_subscription, name="check_subscription"),
     path("confirm-payment/", confirm_payment, name="confirm_payment"),
     path("signup/", signup, name="signup"),

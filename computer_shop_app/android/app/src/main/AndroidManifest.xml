@@ -2,7 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:usesCleartextTraffic="true"
-        android:label="computer_shop_app"
+        android:label="Store Management"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

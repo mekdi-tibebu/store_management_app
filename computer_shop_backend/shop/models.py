@@ -96,6 +96,8 @@ class MaintenanceJob(models.Model):
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # auto-generated UUID
     # id = serializers.CharField(read_only=True)
     customer_name = models.CharField(max_length=100)
+    # Optional link to a ComputerSale when a shop-owned computer is sent to maintenance
+    computer = models.ForeignKey('ComputerSale', null=True, blank=True, on_delete=models.SET_NULL, related_name='maintenance_jobs')
     computer_model = models.CharField(max_length=100)
     reported_issue = models.TextField()
     date_reported = models.DateTimeField(auto_now_add=True)
@@ -112,6 +114,7 @@ class ComputerSale(models.Model):
     STATUS_CHOICES = [
         ('Available', 'Available'),
         ('Sold', 'Sold'),
+        ('Maintenance', 'Maintenance'),
         ('Reserved', 'Reserved'),
     ]
 

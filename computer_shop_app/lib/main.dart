@@ -1,26 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:computer_shop_app/screens/login_screen.dart';
-// import 'package:computer_shop_app/screens/signup_screen.dart';
-// import 'package:computer_shop_app/screens/home_screen.dart';
-// import 'package:computer_shop_app/screens/subscription_screen.dart';
-// import 'package:computer_shop_app/services/auth_service.dart';
-// import 'package:app_links/app_links.dart';
-
-// void main() {
-//   runApp(const MyApp());
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   // Check if app was launched via deep link (cold start)
-//   _appLinks.getInitialLink().then((uri) {
-//     if (uri != null && uri.scheme == 'myapp' && uri.host == 'payment-success') {
-//       Navigator.pushReplacementNamed(context, '/home');
-//     }
-//   });
-
-//   @override
 import 'package:flutter/material.dart';
 import 'package:computer_shop_app/screens/welcome_page_screen.dart';
 import 'package:computer_shop_app/screens/signup_screen.dart';
@@ -53,7 +30,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "Computer Shop App",
+      title: "Store Management",
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const AuthWrapper(),
