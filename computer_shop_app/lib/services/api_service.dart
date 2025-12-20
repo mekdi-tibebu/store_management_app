@@ -6,7 +6,7 @@ import 'package:computer_shop_app/services/auth_service.dart';
 import '../models/maintenance_job.dart';
 
 class ApiService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
+  final String baseUrl = "https://computer-shop-backend-4uyg.onrender.com/api";
   final http.Client client = http.Client();
 
 

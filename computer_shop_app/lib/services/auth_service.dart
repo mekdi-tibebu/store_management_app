@@ -169,7 +169,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
+  final String baseUrl = "https://computer-shop-backend-4uyg.onrender.com/api";
 
   /// Get stored access token with automatic refresh if expired
   Future<String?> getToken() async {
