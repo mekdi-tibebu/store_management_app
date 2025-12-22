@@ -556,13 +556,17 @@ def signup(request):
         )
 
         # Send verification email
-        send_mail(
-            "Verify Your Email - Computer Shop App",
-            f"Welcome {username}!\n\nYour email verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't create this account, please ignore this email.",
-            "storemanagingapp@gmail.com",
-            [email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                "Verify Your Email - Computer Shop App",
+                f"Welcome {username}!\n\nYour email verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't create this account, please ignore this email.",
+                "storemanagingapp@gmail.com",
+                [email],
+                fail_silently=True,  # Don't crash on email failure
+            )
+            print(f"DEBUG (signup): Email sent to {email}")
+        except Exception as e:
+            print(f"WARNING (signup): Email failed: {str(e)}")
 
         return JsonResponse({
             "message": "Signup successful. Please check your email for verification code.",
@@ -846,13 +850,17 @@ def send_reset_otp(request):
     # )
 
     # Send email
-    send_mail(
-        "Password Reset OTP",
-        f"Your OTP is {otp}. It expires in 3 minutes.",
-        "storemanagementapp@gmail.com",
-        [user.email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            "Password Reset OTP",
+            f"Your OTP is {otp}. It expires in 3 minutes.",
+            "storemanagementapp@gmail.com",
+            [user.email],
+            fail_silently=True,
+        )
+        print(f"DEBUG (send_reset_otp): Email sent to {user.email}")
+    except Exception as e:
+        print(f"WARNING (send_reset_otp): Email failed: {str(e)}")
 
     return Response({"message": "OTP sent successfully"})
 
@@ -957,13 +965,17 @@ def resend_verification_code(request):
     )
     
     # Send email
-    send_mail(
-        "Verify Your Email - Computer Shop App",
-        f"Your new email verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.",
-        "storemanagingapp@gmail.com",
-        [email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            "Verify Your Email - Computer Shop App",
+            f"Your new email verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.",
+            "storemanagingapp@gmail.com",
+            [email],
+            fail_silently=True,
+        )
+        print(f"DEBUG (resend_verification_code): Email sent to {email}")
+    except Exception as e:
+        print(f"WARNING (resend_verification_code): Email failed: {str(e)}")
     
     return JsonResponse({"message": "Verification code sent successfully. Please check your email."})
 
