@@ -428,8 +428,9 @@ class _ComputerDetailsSheetState extends State<_ComputerDetailsSheet> {
         return 'Reserved';
     }
   }
+}
 
-  void _showAddComputerDialog(BuildContext context) {
+void _showAddComputerDialog(BuildContext context) {
     final modelController = TextEditingController();
     final specsController = TextEditingController();
     final priceController = TextEditingController();
