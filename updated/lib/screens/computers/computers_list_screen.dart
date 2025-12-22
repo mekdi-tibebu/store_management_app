@@ -254,57 +254,181 @@ class ComputersListScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppTheme.bgCard,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              computer.model,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
+      isScrollControlled: true,
+      builder: (context) => _ComputerDetailsSheet(computer: computer),
+    );
+  }
+}
+
+class _ComputerDetailsSheet extends StatefulWidget {
+  final Computer computer;
+  
+  const _ComputerDetailsSheet({required this.computer});
+  
+  @override
+  State<_ComputerDetailsSheet> createState() => _ComputerDetailsSheetState();
+}
+
+class _ComputerDetailsSheetState extends State<_ComputerDetailsSheet> {
+  late ComputerStatus _selectedStatus;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.computer.status;
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.computer.model,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Specs: ${widget.computer.specs}',
+            style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Price: ${NumberFormat.currency(symbol: 'ETB ', decimalDigits: 2).format(widget.computer.price)}',
+            style: const TextStyle(fontSize: 14, color: AppTheme.primaryBlue),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Quantity: ${widget.computer.quantity}',
+            style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          // Status Dropdown
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Status',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Specs: ${computer.specs}',
-              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Price: ${NumberFormat.currency(symbol: 'ETB ', decimalDigits: 2).format(computer.price)}',
-              style: const TextStyle(fontSize: 14, color: AppTheme.primaryBlue),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Quantity: ${computer.quantity}',
-              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Status: ${computer.statusText}',
-              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.bgDark,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<ComputerStatus>(
+                    value: _selectedStatus,
+                    isExpanded: true,
+                    dropdownColor: AppTheme.bgCard,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    items: ComputerStatus.values.map((status) {
+                      return DropdownMenuItem(
+                        value: status,
+                        child: Text(_getStatusText(status)),
+                      );
+                    }).toList(),
+                    onChanged: (ComputerStatus? newStatus) {
+                      if (newStatus != null) {
+                        setState(() => _selectedStatus = newStatus);
+                      }
+                    },
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (_selectedStatus != widget.computer.status) {
+                      try {
+                        final updatedComputer = Computer(
+                          id: widget.computer.id,
+                          model: widget.computer.model,
+                          specs: widget.computer.specs,
+                          price: widget.computer.price,
+                          quantity: widget.computer.quantity,
+                          status: _selectedStatus,
+                          saleDate: widget.computer.saleDate,
+                        );
+                        await provider.updateComputer(widget.computer.id!, updatedComputer);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Status updated successfully'),
+                              backgroundColor: AppTheme.successGreen,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: $e'),
+                              backgroundColor: AppTheme.errorRed,
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
+  
+  String _getStatusText(ComputerStatus status) {
+    switch (status) {
+      case ComputerStatus.available:
+        return 'Available';
+      case ComputerStatus.sold:
+        return 'Sold';
+      case ComputerStatus.maintenance:
+        return 'Maintenance';
+      case ComputerStatus.reserved:
+        return 'Reserved';
+    }
+  }
+}
 
   void _showAddComputerDialog(BuildContext context) {
     final modelController = TextEditingController();

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../providers/app_provider.dart';
+import '../../models/computer.dart';
+import '../../models/maintenance_job.dart';
 import '../computers/computers_list_screen.dart';
 import '../maintenance/maintenance_list_screen.dart';
 
@@ -19,7 +21,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -237,7 +241,7 @@ class _DashboardHome extends StatelessWidget {
                   ),
                 ),
 
-                SliverToBoxAdapter(
+                Sliver ToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
@@ -247,9 +251,7 @@ class _DashboardHome extends StatelessWidget {
                           'Add Computer',
                           Icons.add_circle_outline,
                           AppTheme.primaryBlue,
-                          () {
-                            Navigator.pushNamed(context, '/add-computer');
-                          },
+                          () => _showAddComputerDialog(context, provider),
                         ),
                         const SizedBox(height: 12),
                         _buildQuickAction(
@@ -257,9 +259,7 @@ class _DashboardHome extends StatelessWidget {
                           'New Maintenance Job',
                           Icons.build_outlined,
                           AppTheme.warningAmber,
-                          () {
-                            Navigator.pushNamed(context, '/add-maintenance');
-                          },
+                          () => _showAddMaintenanceDialog(context, provider),
                         ),
                       ],
                     ),
@@ -348,6 +348,173 @@ class _DashboardHome extends StatelessWidget {
             Icon(Icons.arrow_forward_ios, color: AppTheme.textSecondary, size: 16),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddComputerDialog(BuildContext context, AppProvider provider) {
+    final modelController = TextEditingController();
+    final specsController = TextEditingController();
+    final priceController = TextEditingController();
+    final quantityController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.bgCard,
+        title: const Text('Add Computer', style: TextStyle(color: AppTheme.textPrimary)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: modelController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(labelText: 'Model'),
+              ),
+              TextField(
+                controller: specsController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(labelText: 'Specs'),
+              ),
+              TextField(
+                controller: priceController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Price'),
+              ),
+              TextField(
+                controller: quantityController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Quantity'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final computer = Computer(
+                model: modelController.text,
+                specs: specsController.text,
+                price: double.tryParse(priceController.text) ?? 0,
+                quantity: int.tryParse(quantityController.text) ?? 0,
+              );
+              
+              try {
+                await provider.addComputer(computer);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Computer added successfully'),
+                      backgroundColor: AppTheme.successGreen,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.errorRed,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddMaintenanceDialog(BuildContext context, AppProvider provider) {
+    final customerNameController = TextEditingController();
+    final computerModelController = TextEditingController();
+    final issueController = TextEditingController();
+    final notesController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.bgCard,
+        title: const Text('New Maintenance Job', style: TextStyle(color: AppTheme.textPrimary)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: customerNameController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(labelText: 'Customer Name'),
+              ),
+              TextField(
+                controller: computerModelController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(labelText: 'Computer Model'),
+              ),
+              TextField(
+                controller: issueController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(labelText: 'Reported Issue'),
+                maxLines: 3,
+              ),
+              TextField(
+                controller: notesController,
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: const InputDecoration(labelText: 'Notes (Optional)'),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final job = MaintenanceJob(
+                customerName: customerNameController.text,
+                computerModel: computerModelController.text,
+                reportedIssue: issueController.text,
+                notes: notesController.text.isEmpty ? null : notesController.text,
+                dateReported: DateTime.now(),
+              );
+              
+              try {
+                await provider.addMaintenanceJob(job);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Maintenance job created successfully'),
+                      backgroundColor: AppTheme.successGreen,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.errorRed,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
       ),
     );
   }
