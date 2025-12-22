@@ -241,7 +241,7 @@ class _DashboardHome extends StatelessWidget {
                   ),
                 ),
 
-                Sliver ToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
