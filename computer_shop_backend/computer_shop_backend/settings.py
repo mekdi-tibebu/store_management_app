@@ -18,19 +18,22 @@ CHAPA_SECRET_KEY = "CHASECK_TEST-nHCc5HHEQ15Wl7LhLRBkhGBDtL93hTEV"
 
 AUTH_USER_MODEL = 'auth.User'
 
+import os
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'       
-EMAIL_PORT = 587                    
-EMAIL_USE_TLS = True                
-EMAIL_USE_SSL = False               
-EMAIL_HOST_USER = 'storemanagingapp@gmail.com'  
-EMAIL_HOST_PASSWORD = 'crcbtwlgxtvtavqa'           
-DEFAULT_FROM_EMAIL = 'Store Management <storemanagingapp@gmail.com>'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'storemanagingapp@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'crcbtwlgxtvtavqa')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Store Management <storemanagingapp@gmail.com>')
+
 
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "computer_shop_backend.onrender.com"
+    "computer-shop-backend-4uyg.onrender.com"  # Fixed to match actual Render URL
 ]
 
 CSRF_TRUSTED_ORIGINS = [
