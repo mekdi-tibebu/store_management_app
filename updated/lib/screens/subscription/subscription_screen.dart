@@ -67,7 +67,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     setState(() => _validatingCoupon = true);
 
     final selectedPlanData = _plans.firstWhere((plan) => plan['id'].toString() == _selectedPlan);
-    final amount = selectedPlanData['price'] as int;
+    final amount = ((selectedPlanData['amount'] as num?)?.toInt() ?? 0);
 
     final authService = AuthService();
     final result = await authService.validateCoupon(couponCode, amount);
@@ -103,7 +103,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
 
     final selectedPlanData = _plans.firstWhere((plan) => plan['id'].toString() == _selectedPlan);
-    final amount = selectedPlanData['price'] as int;
+    final amount = ((selectedPlanData['amount'] as num?)?.toInt() ?? 0);
 
     final provider = Provider.of<AppProvider>(context, listen: false);
     final email = provider.currentUser?.email ?? "";
@@ -156,7 +156,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   int _getFinalAmount() {
     if (_selectedPlan == null) return 0;
     final selectedPlanData = _plans.firstWhere((plan) => plan['id'].toString() == _selectedPlan);
-    final amount = selectedPlanData['price'] as int;
+    final amount = ((selectedPlanData['amount'] as num?)?.toInt() ?? 0);
     
     if (_couponData != null && _couponData!['valid'] == true) {
       return (_couponData!['final_amount'] as num).toInt();
@@ -211,7 +211,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '${plan['price']} ETB',
+              '${plan['amount']} ETB',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -400,7 +400,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '${_selectedPlan != null ? _plans.firstWhere((p) => p['id'].toString() == _selectedPlan)['price'] : 0} ETB',
+                                  '${_selectedPlan != null ? _plans.firstWhere((p) => p['id'].toString() == _selectedPlan)['amount'] : 0} ETB',
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: AppTheme.textPrimary,
