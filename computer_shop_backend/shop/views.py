@@ -274,8 +274,8 @@ def create_chapa_payment(user, amount, tx_ref, frontend_url=None):
         "last_name": user.last_name or "",
         "phone_number": user.profile.phone_number if hasattr(user, 'profile') and user.profile.phone_number else "+251912345678",
         "tx_ref": tx_ref,
-        "callback_url": "http://127.0.0.1:8000/api/payment-callback/",
-        "return_url": f"http://127.0.0.1:8000/api/payment-success/?tx_ref={tx_ref}" + (f"&frontend_url={frontend_url}" if frontend_url else ""), 
+        "callback_url": f"{os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')}/api/payment-callback/",
+        "return_url": f"{os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')}/api/payment-success/?tx_ref={tx_ref}" + (f"&frontend_url={frontend_url}" if frontend_url else ""), 
     }
     try:
         r = requests.post(
