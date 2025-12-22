@@ -158,7 +158,7 @@ class AuthService {
   Future<List<Map<String, dynamic>>> getSubscriptionPricing() async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/subscription-pricing/'),
+        Uri.parse('${ApiConfig.apiBaseUrl}/subscription-pricing/'),
         headers: ApiConfig.jsonHeaders,
       );
       
@@ -179,7 +179,7 @@ class AuthService {
       if (token == null) return false;
       
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/check-subscription/'),
+        Uri.parse('${ApiConfig.apiBaseUrl}/check-subscription/'),
         headers: {
           ...ApiConfig.jsonHeaders,
           'Authorization': 'Bearer $token',
@@ -208,7 +208,7 @@ class AuthService {
       if (token == null) return null;
       
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/create-payment/'),
+        Uri.parse('${ApiConfig.apiBaseUrl}/create-payment/'),
         headers: {
           ...ApiConfig.jsonHeaders,
           'Authorization': 'Bearer $token',
@@ -240,7 +240,7 @@ class AuthService {
       }
       
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/validate-coupon/'),
+        Uri.parse('${ApiConfig.apiBaseUrl}/validate-coupon/'),
         headers: {
           ...ApiConfig.jsonHeaders,
           'Authorization': 'Bearer $token',

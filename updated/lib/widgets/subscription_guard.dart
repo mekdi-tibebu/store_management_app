@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'subscription/subscription_screen.dart';
+import '../screens/subscription/subscription_screen.dart';
 
 class SubscriptionGuard extends StatefulWidget {
   final Widget child;
@@ -35,7 +35,7 @@ class _SubscriptionGuardState extends State<SubscriptionGuard> {
     if (!hasSubscription && mounted) {
       // Redirect to subscription page
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+        MaterialPageRoute(builder: (_) => SubscriptionScreen()),
       );
     }
   }
