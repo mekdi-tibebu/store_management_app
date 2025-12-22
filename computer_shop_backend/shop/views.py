@@ -606,6 +606,7 @@ class MaintenanceJobViewSet(viewsets.ModelViewSet):
     """
     queryset = MaintenanceJob.objects.all()
     serializer_class = MaintenanceJobSerializer
+    permission_classes = [IsAuthenticated]
 
 @api_view(['GET'])
 def get_subscription_pricing(request):
