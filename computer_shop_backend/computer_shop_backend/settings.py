@@ -110,16 +110,27 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Use standard WhiteNoise storage to avoid admin panel CSS issues
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
+# CORS configuration - Allow all origins for development and production
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = ['*']
-CORS_ALLOW_METHODS = ['*']
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:63469",
-    "http://127.0.0.1:63469",
-    "http://localhost",
-    "http://127.0.0.1",
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 ROOT_URLCONF = 'computer_shop_backend.urls'
