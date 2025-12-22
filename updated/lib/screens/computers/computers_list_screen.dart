@@ -513,4 +513,3 @@ void _showAddComputerDialog(BuildContext context) {
       ),
     );
   }
-}
