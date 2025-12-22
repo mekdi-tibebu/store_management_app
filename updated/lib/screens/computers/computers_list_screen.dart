@@ -271,11 +271,154 @@ class _ComputerDetailsSheet extends StatefulWidget {
 
 class _ComputerDetailsSheetState extends State<_ComputerDetailsSheet> {
   late ComputerStatus _selectedStatus;
+  final TextEditingController _quantityController = TextEditingController();
   
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.computer.status;
+  }
+  
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _handleStatusChange(BuildContext context, AppProvider provider) async {
+    if (_selectedStatus == widget.computer.status) {
+      Navigator.pop(context);
+      return;
+    }
+
+    // If changing to "Sold", ask for quantity
+    if (_selectedStatus == ComputerStatus.sold) {
+      await _handleSoldStatus(context, provider);
+    } else {
+      // For other status changes, just update
+      await _updateStatus(context, provider);
+    }
+  }
+
+  Future<void> _handleSoldStatus(BuildContext context, AppProvider provider) async {
+    // Show dialog to ask for quantity
+    final quantity = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.bgCard,
+        title: const Text(
+          'Sell Units',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Available: ${widget.computer.quantity} units',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _quantityController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Quantity to sell',
+                hintText: 'Enter quantity',
+                hintStyle: TextStyle(color: AppTheme.textSecondary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final qty = int.tryParse(_quantityController.text);
+              if (qty != null && qty > 0 && qty <= widget.computer.quantity) {
+                Navigator.pop(context, qty);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Invalid quantity. Must be between 1 and ${widget.computer.quantity}'),
+                    backgroundColor: AppTheme.errorRed,
+                  ),
+                );
+              }
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (quantity != null && mounted) {
+      try {
+        // Call sellUnits API which handles creating sold items and updating quantity
+        await provider.sellUnits(widget.computer.id!, quantity);
+        
+        if (context.mounted) {
+          Navigator.pop(context); // Close details modal
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Sold $quantity unit(s) successfully'),
+              backgroundColor: AppTheme.successGreen,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error selling units: $e'),
+              backgroundColor: AppTheme.errorRed,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _updateStatus(BuildContext context, AppProvider provider) async {
+    try {
+      final updatedComputer = Computer(
+        id: widget.computer.id,
+        model: widget.computer.model,
+        specs: widget.computer.specs,
+        price: widget.computer.price,
+        quantity: widget.computer.quantity,
+        status: _selectedStatus,
+        saleDate: widget.computer.saleDate,
+      );
+      
+      await provider.updateComputer(widget.computer.id!, updatedComputer);
+      
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Status updated successfully'),
+            backgroundColor: AppTheme.successGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppTheme.errorRed,
+          ),
+        );
+      }
+    }
   }
   
   @override
@@ -370,42 +513,7 @@ class _ComputerDetailsSheetState extends State<_ComputerDetailsSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () async {
-                    if (_selectedStatus != widget.computer.status) {
-                      try {
-                        final updatedComputer = Computer(
-                          id: widget.computer.id,
-                          model: widget.computer.model,
-                          specs: widget.computer.specs,
-                          price: widget.computer.price,
-                          quantity: widget.computer.quantity,
-                          status: _selectedStatus,
-                          saleDate: widget.computer.saleDate,
-                        );
-                        await provider.updateComputer(widget.computer.id!, updatedComputer);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Status updated successfully'),
-                              backgroundColor: AppTheme.successGreen,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $e'),
-                              backgroundColor: AppTheme.errorRed,
-                            ),
-                          );
-                        }
-                      }
-                    } else {
-                      Navigator.pop(context);
-                    }
-                  },
+                  onPressed: () => _handleStatusChange(context, provider),
                   child: const Text('Save'),
                 ),
               ),

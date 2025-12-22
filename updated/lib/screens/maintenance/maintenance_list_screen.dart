@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../providers/app_provider.dart';
 import '../../models/maintenance_job.dart';
+import '../../models/computer.dart';
 
 class MaintenanceListScreen extends StatelessWidget {
   const MaintenanceListScreen({super.key});
@@ -66,7 +67,11 @@ class MaintenanceListScreen extends StatelessWidget {
                     );
                   }
 
-                  if (provider.maintenanceJobs.isEmpty) {
+                  final maintenanceComputers = provider.computers
+                      .where((c) => c.status == ComputerStatus.maintenance)
+                      .toList();
+
+                  if (provider.maintenanceJobs.isEmpty && maintenanceComputers.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -90,17 +95,50 @@ class MaintenanceListScreen extends StatelessWidget {
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => provider.loadMaintenanceJobs(),
+                    onRefresh: () async {
+                      await Future.wait([
+                        provider.loadMaintenanceJobs(),
+                        provider.loadComputers(),
+                      ]);
+                    },
                     color: AppTheme.warningAmber,
-                    child: ListView.builder(
+                    child: ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: provider.maintenanceJobs.length,
-                      itemBuilder: (context, index) {
-                        return _buildMaintenanceCard(
-                          context,
-                          provider.maintenanceJobs[index],
-                        );
-                      },
+                      children: [
+                        if (maintenanceComputers.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              'Computers in Maintenance',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                          ...maintenanceComputers.map(
+                            (computer) => _buildComputerMaintenanceCard(context, computer),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                        if (provider.maintenanceJobs.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              'Customer Maintenance Jobs',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                          ...provider.maintenanceJobs.map(
+                            (job) => _buildMaintenanceCard(context, job),
+                          ),
+                        ],
+                      ],
                     ),
                   );
                 },
@@ -111,6 +149,90 @@ class MaintenanceListScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildComputerMaintenanceCard(BuildContext context, Computer computer) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.warningGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.computer,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      computer.model,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      computer.specs,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height:4),
+                    Text(
+                      'Quantity: ${computer.quantity}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.warningGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.build, size: 14, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text(
+                      'Maintenance',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
 
   Widget _buildMaintenanceCard(BuildContext context, MaintenanceJob job) {
     Color statusColor;
