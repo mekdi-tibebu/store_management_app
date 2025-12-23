@@ -1,6 +1,9 @@
 from django.shortcuts import render
+
+# Create your views here.
+
 from rest_framework import viewsets
-from .models import MaintenanceJob, ComputerSale, PasswordResetOTP, SoldItem, EmailVerificationOTP, Coupon, Subscription, SiteSettings
+from .models import MaintenanceJob, ComputerSale, PasswordResetOTP, SoldItem, EmailVerificationOTP, Coupon, Subscription
 from .serializers import MaintenanceJobSerializer, ComputerSaleSerializer, SoldItemSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
@@ -18,14 +21,11 @@ from django.contrib.auth import authenticate
 from django.conf import settings
 import time
 from django.http import HttpResponse
-import os
-from django.shortcuts import render, redirect 
+from django.shortcuts import render, redirect # Import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage
 from django.utils.crypto import get_random_string
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
 import random
 import json
 
@@ -35,17 +35,6 @@ OTP_EXPIRY_MINUTES = 2
 from .models import PasswordResetOTP
 
 CHAPA_SECRET_KEY = settings.CHAPA_SECRET_KEY
-
-def get_site_settings():
-    """Helper function to get site settings with environment variable fallbacks"""
-    site_settings = SiteSettings.load()
-    return {
-        'chapa_secret_key': site_settings.chapa_secret_key or os.getenv('CHAPA_SECRET_KEY', settings.CHAPA_SECRET_KEY),
-        'chapa_public_key': site_settings.chapa_public_key or os.getenv('CHAPA_PUBLIC_KEY', ''),
-        'backend_url': site_settings.backend_url or os.getenv('BACKEND_URL', 'http://127.0.0.1:8000'),
-        'frontend_url': site_settings.frontend_url or os.getenv('FRONTEND_URL', 'http://localhost:53841'),
-    }
-
 
 @csrf_exempt
 def payment_callback(request):
@@ -64,9 +53,8 @@ def payment_callback(request):
         print(f"🔔 Payment callback received for tx_ref: {tx_ref}")
         
         # Verify payment with Chapa
-        site_config = get_site_settings()
         headers = {
-            "Authorization": f"Bearer {site_config['chapa_secret_key']}",
+            "Authorization": f"Bearer {settings.CHAPA_SECRET_KEY}",
         }
         
         verify_url = f"https://api.chapa.co/v1/transaction/verify/{tx_ref}"
@@ -140,9 +128,8 @@ def payment_success(request):
     if tx_ref:
         try:
             # Verify and activate subscription
-            site_config = get_site_settings()
             headers = {
-                "Authorization": f"Bearer {site_config['chapa_secret_key']}",
+                "Authorization": f"Bearer {settings.CHAPA_SECRET_KEY}",
             }
             
             verify_url = f"https://api.chapa.co/v1/transaction/verify/{tx_ref}"
@@ -183,9 +170,7 @@ def payment_success(request):
             traceback.print_exc()
     
     # For web (Chrome), redirect to the app's payment-success route
-    # Use frontend_url from request first, then from site settings, then localhost
-    site_config = get_site_settings()
-    frontend_url = request.GET.get('frontend_url') or site_config['frontend_url']
+    frontend_url = request.GET.get('frontend_url')
     if frontend_url:
         # Use provided frontend URL (e.g., http://localhost:53841/#/)
         # Ensure it ends with / so we can append payment-success
@@ -277,17 +262,14 @@ def check_subscription(request):
         })
 
 
-def create_chapa_payment(user, amount, tx_ref, frontend_url=None):
-    site_config = get_site_settings()
+def create_chapa_payment(request, user, amount, tx_ref, frontend_url=None):
+    # Dynamically determine the base URL from the request
+    base_url = request.build_absolute_uri('/')[:-1]  # Removes trailing slash
+
     headers = {
-        "Authorization": f"Bearer {site_config['chapa_secret_key']}",
+        "Authorization": f"Bearer {CHAPA_SECRET_KEY}",
         "Content-Type": "application/json",
     }
-    
-    # Use frontend_url from parameter, or from site settings
-    if not frontend_url:
-        frontend_url = site_config['frontend_url']
-    
     data = {
         "amount": str(amount),
         "currency": "ETB",
@@ -296,8 +278,8 @@ def create_chapa_payment(user, amount, tx_ref, frontend_url=None):
         "last_name": user.last_name or "",
         "phone_number": user.profile.phone_number if hasattr(user, 'profile') and user.profile.phone_number else "+251912345678",
         "tx_ref": tx_ref,
-        "callback_url": f"{site_config['backend_url']}/api/payment-callback/",
-        "return_url": f"{site_config['backend_url']}/api/payment-success/?tx_ref={tx_ref}" + (f"&frontend_url={frontend_url}" if frontend_url else ""), 
+        "callback_url": f"{base_url}/api/payment-callback/",
+        "return_url": f"{base_url}/api/payment-success/?tx_ref={tx_ref}" + (f"&frontend_url={frontend_url}" if frontend_url else ""),
     }
     try:
         r = requests.post(
@@ -357,7 +339,7 @@ def start_payment(request):
 
     tx_ref = f"txn-{user.id}-{int(time.time())}"
 
-    payment_response = create_chapa_payment(user, int(final_amount), tx_ref, frontend_url)
+    payment_response = create_chapa_payment(request, user, int(final_amount), tx_ref, frontend_url)
     checkout_url = payment_response.get("data", {}).get("checkout_url")
 
     if checkout_url:
@@ -421,6 +403,34 @@ def validate_coupon(request):
             "error": "Invalid coupon code"
         }, status=200)
 
+
+# @api_view(["POST"])
+# @permission_classes([IsAuthenticated])
+# def start_payment(request):
+#     """Start a Chapa payment and return the checkout URL"""
+#     try:
+#         user = request.user
+#         amount = request.data.get("amount", 100)
+
+#         print("Starting payment for:", user.username)
+#         print("Amount received:", amount)
+
+#         response = create_chapa_payment(user, amount)
+#         print("Chapa API Response:", response)
+
+#         checkout_url = response.get("data", {}).get("checkout_url")
+
+#         if checkout_url:
+#             return Response({"payment_url": checkout_url})
+#         return Response({"error": "Failed to create payment"}, status=400)
+
+#     except Exception as e:
+#         import traceback
+#         print("❌ ERROR in start_payment:", str(e))
+#         traceback.print_exc()
+#         return Response({"error": str(e)}, status=500)
+
+
 @api_view(["GET", "POST"])
 def payment_callback(request):
     """Chapa will hit this endpoint after payment"""
@@ -428,6 +438,23 @@ def payment_callback(request):
     tx_ref = request.data.get("tx_ref") or request.GET.get("trx_ref")
     if not tx_ref:
         return Response({"error": "Transaction reference missing"}, status=400)
+
+    # 🔹 Verify payment with Chapa API
+    # headers = {"Authorization": f"Bearer {CHAPA_SECRET_KEY}"}
+    # r = requests.get(
+    #     f"https://api.chapa.co/v1/transaction/verify/{tx_ref}",
+    #     headers=headers
+    # )
+    # result = r.json()
+
+    # if result.get("status") == "success":
+    #     # Activate subscription for the user
+    #     user = request.user  # may need to identify via tx_ref
+    #     sub, _ = Subscription.objects.get_or_create(user=user)
+    #     sub.activate(tx_ref)
+    #     return Response({"message": "Payment verified & subscription activated"})
+
+    # return Response({"error": "Payment verification failed"}, status=400)
     try:
         # Assuming format "txn-<user_id>-<timestamp>"
         user_id = int(tx_ref.split("-")[1])
@@ -486,6 +513,47 @@ def confirm_payment(request):
         "details": result
     }, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+# Step 2: Confirm payment after callback
+# @api_view(["POST"])
+# @permission_classes([IsAuthenticated])
+# def confirm_payment(request):
+#     user = request.user
+#     transaction_id = request.data.get("transaction_id")
+
+#     if not transaction_id:
+#         return Response({"error": "Transaction ID required"}, status=400)
+
+#     # 🔹 TODO: verify transaction_id with Telebirr API
+
+#     sub, _ = Subscription.objects.get_or_create(user=user)
+#     sub.activate(transaction_id)
+
+#     return Response({
+#         "message": "Subscription activated",
+#         "expiry_date": sub.expiry_date
+#     })
+
+
+# @api_view(["POST"])
+# @permission_classes([IsAuthenticated])
+# def confirm_payment(request):
+#     telebirr_payment_url = "https://app.telebirr.com/pay?transaction_id=12345"
+#     return Response({
+#         "payment_url": telebirr_payment_url
+#     })
+#     user = request.user
+#     transaction_id = request.data.get("transaction_id")
+
+#     if not transaction_id:
+#         return Response({"error": "Transaction ID required"}, status=400)
+#     # 🔹 TODO: Verify payment with Telebirr API before confirming
+#     sub, _ = Subscription.objects.get_or_create(user=user)
+#     sub.activate(transaction_id)
+
+#     return Response({"message": "Subscription activated", "expiry_d    await prefs.remove("pending_tx_ref")
+
 @api_view(["POST"])
 @csrf_exempt
 def custom_login(request):
@@ -513,6 +581,15 @@ def custom_login(request):
     # Check password
     if not user.check_password(password):
         return JsonResponse({"error": "Invalid credentials"}, status=401)
+    
+    # Check if user is verified
+    if not user.is_active:
+        return JsonResponse({
+            "error": "Email not verified",
+            "email_not_verified": True,
+            "email": user.email,
+            "message": "Please verify your email before logging in"
+        }, status=403)
     
     # Generate JWT tokens
     from rest_framework_simplejwt.tokens import RefreshToken
@@ -547,30 +624,61 @@ def signup(request):
         if User.objects.filter(email=email).exists():
             return JsonResponse({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create user and activate immediately
+        # Create user as inactive until email is verified
         user = User.objects.create_user(
             username=username,
             password=password,
             email=email,
-            is_active=True  # User is active immediately - no email verification
+            is_active=False  # Require email verification
         )
+
+        # Generate OTP for email verification
+        otp = str(random.randint(1000, 9999))
+        expires = timezone.now() + timedelta(minutes=10)
         
-        print(f"DEBUG (signup): User '{username}' created successfully with email {email}")
+        print(f"DEBUG (signup): Generated verification OTP: {otp} for email: {email}")
+        
+        EmailVerificationOTP.objects.create(
+            user=user,
+            otp=otp,
+            expires_at=expires,
+            verified=False
+        )
+
+        # Send verification email
+        send_mail(
+            "Verify Your Email - Computer Shop App",
+            f"Welcome {username}!\n\nYour email verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't create this account, please ignore this email.",
+            "storemanagingapp@gmail.com",
+            [email],
+            fail_silently=False,
+        )
 
         return JsonResponse({
-            "message": "Signup successful! You can now log in.",
-            "username": username,
+            "message": "Signup successful. Please check your email for verification code.",
             "email": email
         }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        print(f"ERROR (signup): {str(e)}")
-        import traceback
-        traceback.print_exc()
+        print(f"Signup error: {str(e)}")
         return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+# @api_view(["POST"])
+# def login(request):
+#     username = request.data.get("username")
+#     password = request.data.get("password")
 
-
+#     user = authenticate(username=username, password=password)
+#     if user is not None:
+#         # generate or get token
+#         token, _ = Token.objects.get_or_create(user=user)
+#         return Response({
+#             "token": token.key,
+#             "username": user.username,
+#             "email": user.email,
+#         })
+#     else:
+#         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(["POST"])
 def login(request):
@@ -605,7 +713,6 @@ class MaintenanceJobViewSet(viewsets.ModelViewSet):
     """
     queryset = MaintenanceJob.objects.all()
     serializer_class = MaintenanceJobSerializer
-    permission_classes = [IsAuthenticated]
 
 @api_view(['GET'])
 def get_subscription_pricing(request):
@@ -845,20 +952,37 @@ def send_reset_otp(request):
     # )
 
     # Send email
-    try:
-        send_mail(
-            "Password Reset OTP",
-            f"Your OTP is {otp}. It expires in 3 minutes.",
-            "storemanagementapp@gmail.com",
-            [user.email],
-            fail_silently=True,
-        )
-        print(f"DEBUG (send_reset_otp): Email sent to {user.email}")
-    except Exception as e:
-        print(f"WARNING (send_reset_otp): Email failed: {str(e)}")
+    send_mail(
+        "Password Reset OTP",
+        f"Your OTP is {otp}. It expires in 3 minutes.",
+        "storemanagementapp@gmail.com",
+        [user.email],
+        fail_silently=False,
+    )
 
     return Response({"message": "OTP sent successfully"})
 
+# def verify_otp_and_reset(request):
+#     email = request.POST.get('email')
+#     otp = request.POST.get('otp')
+#     new_password = request.POST.get('new_password')
+
+#     try:
+#         user = User.objects.get(email=email)
+#         otp_obj = PasswordResetOTP.objects.get(user=user, otp=otp, verified=False)
+#     except (User.DoesNotExist, PasswordResetOTP.DoesNotExist):
+#         return JsonResponse({"error": "Invalid OTP"}, status=400)
+
+#     if otp_obj.expires_at < timezone.now():
+#         return JsonResponse({"error": "OTP expired"}, status=400)
+
+#     user.set_password(new_password)
+#     user.save()
+
+#     otp_obj.verified = True
+#     otp_obj.save()
+
+#     return JsonResponse({"message": "Password reset successfully"})
 @api_view(['POST'])
 @csrf_exempt
 def verify_reset_otp(request):
@@ -960,35 +1084,12 @@ def resend_verification_code(request):
     )
     
     # Send email
-    try:
-        send_mail(
-            "Verify Your Email - Computer Shop App",
-            f"Your new email verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.",
-            "storemanagingapp@gmail.com",
-            [email],
-            fail_silently=True,
-        )
-        print(f"DEBUG (resend_verification_code): Email sent to {email}")
-    except Exception as e:
-        print(f"WARNING (resend_verification_code): Email failed: {str(e)}")
+    send_mail(
+        "Verify Your Email - Computer Shop App",
+        f"Your new email verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.",
+        "storemanagingapp@gmail.com",
+        [email],
+        fail_silently=False,
+    )
     
     return JsonResponse({"message": "Verification code sent successfully. Please check your email."})
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_user_profile_data(request):
-    """
-    Returns user data as JSON for the Flutter app
-    """
-    user = request.user
-    return Response({
-        "username": user.username,
-        "email": user.email,
-        "is_active": user.is_active,
-    })
-
-@csrf_exempt
-@api_view(['POST'])
-def api_logout(request):
-    logout(request)
-    return JsonResponse({"message": "Logged out successfully"})

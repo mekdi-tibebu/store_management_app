@@ -1,6 +1,5 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from django.contrib.auth import views as auth_views
 from .views import (
     MaintenanceJobViewSet,
     ComputerSaleViewSet,
@@ -18,9 +17,7 @@ from .views import (
     resend_verification_code,
     validate_coupon,
     get_subscription_pricing,
-    get_user_profile_data,
-    api_logout,
-    send_to_maintenance,      
+    send_to_maintenance,
     return_from_maintenance,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -51,6 +48,4 @@ urlpatterns = [
     path('resend-verification-code/', resend_verification_code, name='resend-verification-code'),
     path('validate-coupon/', validate_coupon, name='validate-coupon'),
     path('subscription-pricing/', get_subscription_pricing, name='subscription-pricing'),
-    path("profile-data/", get_user_profile_data, name="profile_data"),    
-    path("logout/", api_logout, name="logout"),
 ]

@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 
+# Create your models here.
+
 class Subscription(models.Model):
     SUBSCRIPTION_TYPE_CHOICES = [
         ('lifetime', 'Lifetime Access'),
@@ -235,65 +237,4 @@ class SubscriptionPricing(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.amount} ETB"
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=20, blank=True, null=True)
-    
-    def __str__(self):
-        return self.user.username
-
-
-class SiteSettings(models.Model):
-    """
-    Singleton model for site-wide settings.
-    Only one instance should exist.
-    """
-    chapa_secret_key = models.CharField(
-        max_length=255, 
-        blank=True, 
-        null=True,
-        help_text="Chapa Secret Key for payment processing. Falls back to CHAPA_SECRET_KEY environment variable if not set."
-    )
-    chapa_public_key = models.CharField(
-        max_length=255, 
-        blank=True, 
-        null=True,
-        help_text="Chapa Public Key (optional, for frontend integration)"
-    )
-    backend_url = models.URLField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="Backend URL for payment callbacks (e.g., https://store-management-56xj.onrender.com or http://127.0.0.1:8000 for local dev). Used for Chapa callback and return URLs."
-    )
-    frontend_url = models.URLField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="Frontend URL where users are redirected after payment (e.g., https://yourapp.com or http://localhost:53841 for local dev)"
-    )
-
-    
-    class Meta:
-        verbose_name = "Site Settings"
-        verbose_name_plural = "Site Settings"
-    
-    def save(self, *args, **kwargs):
-        """Ensure only one instance exists (singleton pattern)"""
-        self.pk = 1
-        super().save(*args, **kwargs)
-    
-    def delete(self, *args, **kwargs):
-        """Prevent deletion"""
-        pass
-    
-    @classmethod
-    def load(cls):
-        """Load the singleton instance, create if doesn't exist"""
-        obj, created = cls.objects.get_or_create(pk=1)
-        return obj
-    
-    def __str__(self):
-        return "Site Settings"
 
