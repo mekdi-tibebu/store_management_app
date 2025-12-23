@@ -1,4 +1,4 @@
-from django.contrib import admin
+ffrom .models import MaintenanceJob, ComputerSale, Coupon, Subscription, PasswordResetOTP, EmailVerificationOTP, SubscriptionPricingom django.contrib import admin
 from .models import MaintenanceJob, ComputerSale, Coupon, Subscription, PasswordResetOTP, EmailVerificationOTP, SubscriptionPricing, SiteSettings
 
 @admin.register(MaintenanceJob)
