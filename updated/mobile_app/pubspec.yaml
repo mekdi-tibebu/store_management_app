@@ -9,7 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  pdf: ^3.10.4
+  printing: ^5.11.0
+  excel: ^4.0.2
+  path_provider: ^2.1.1
+  share_plus: ^7.2.1
+  open_filex: ^4.7.0 
   # Firebase
   firebase_core: ^3.8.1
   firebase_auth: ^5.3.3
@@ -29,6 +34,9 @@ dependencies:
   
   # Local Storage
   shared_preferences: ^2.2.2
+  firebase_storage: ^12.4.10
+
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

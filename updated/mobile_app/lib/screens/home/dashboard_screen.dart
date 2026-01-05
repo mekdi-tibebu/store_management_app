@@ -7,10 +7,13 @@ import '../../providers/sales_provider.dart';
 import '../inventory/inventory_list_screen.dart';
 import '../sales/sales_history_screen.dart';
 import '../sales/new_sale_screen.dart';
+import '../reports/reports_screen.dart';
 import '../subscription/subscription_wall_screen.dart';
 import '../maintenance/maintenance_screen.dart';
 import '../auth/login_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -386,6 +389,25 @@ class _DashboardHomeState extends State<DashboardHome> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              _ActionCardFullWidth(
+                title: 'Business Reports (P&L)',
+                subtitle: 'Daily, Weekly & Monthly summaries',
+                icon: Icons.bar_chart_rounded,
+                color: Colors.indigo,
+                onTap: () {
+                  if (!subscriptionProvider.hasActiveSubscription) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Subscription required to view reports')),
+                    );
+                    widget.onNavigateToSubscription();
+                    return;
+                  }
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ReportsScreen()),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -474,6 +496,58 @@ class _ActionCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionCardFullWidth extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionCardFullWidth({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 30, color: color),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey),
             ],
           ),
         ),

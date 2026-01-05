@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/inventory_provider.dart';
@@ -182,11 +183,31 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      child: Icon(
-                        _getCategoryIcon(computer.category),
-                        color: Theme.of(context).colorScheme.primary,
+                    // --- NEW FANCY IMAGE LEADING ---
+                    leading: Container(
+                      width: 55,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: (computer.imageBase64 != null && computer.imageBase64!.isNotEmpty)
+                            ? Image.memory(
+                                base64Decode(computer.imageBase64!),
+                                fit: BoxFit.cover,
+                                // Fallback if the string is corrupted
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  _getCategoryIcon(computer.category),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              )
+                            : Icon(
+                                _getCategoryIcon(computer.category),
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                       ),
                     ),
                     title: Row(
@@ -199,7 +220,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                         ),
                         // Status Badge
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: _getStatusColor(computer.status),
                             borderRadius: BorderRadius.circular(12),
@@ -212,10 +233,10 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                                 size: 14,
                                 color: Colors.white,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 computer.status.toUpperCase(),
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 10,
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,

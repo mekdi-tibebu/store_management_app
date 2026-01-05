@@ -45,12 +45,13 @@ class SalesService {
       if (userId == null) {
         throw 'User not authenticated';
       }
-
+      double totalCost = sale.items.fold(0, (sum, item) => sum + (item.costPrice * item.quantity));
+      double profit = sale.total - totalCost;
       // Start a batch write to update inventory and create sale atomically
       final batch = _firestore.batch();
+      final saleRef = _firestore.collection('sales').doc();
 
       // Create sale document
-      final saleRef = _firestore.collection('sales').doc();
       final saleData = Sale(
         userId: userId,
         saleNumber: sale.saleNumber,
@@ -61,6 +62,8 @@ class SalesService {
         subtotal: sale.subtotal,
         tax: sale.tax,
         total: sale.total,
+        totalCost: totalCost,
+        profit: profit,
         paymentMethod: sale.paymentMethod,
         status: sale.status,
         createdAt: sale.createdAt,

@@ -4,6 +4,7 @@ import '../../providers/inventory_provider.dart';
 import '../../providers/sales_provider.dart';
 import '../../models/computer_model.dart';
 import '../../models/sale_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 class NewSaleScreen extends StatefulWidget {
@@ -27,15 +28,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     super.dispose();
   }
 
+
   void _addToCart(Computer computer) {
     final existingIndex = _cartItems.indexWhere((item) => item.computerId == computer.id);
     
     if (existingIndex >= 0) {
       final currentQty = _cartItems[existingIndex].quantity;
       if (currentQty >= computer.quantity) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insufficient stock')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insufficient stock')));
         return;
       }
       
@@ -46,6 +46,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           computerName: computer.name,
           quantity: newQty,
           unitPrice: computer.price,
+          // NEW: Store cost price in the cart item
+          costPrice: computer.costPrice, 
           totalPrice: computer.price * newQty,
         );
       });
@@ -56,10 +58,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           computerName: computer.name,
           quantity: 1,
           unitPrice: computer.price,
+          costPrice: computer.costPrice, // NEW: Capture cost at time of sale
           totalPrice: computer.price,
         ));
       });
     }
+  }
+
+  // NEW: Calculate Total Cost for the whole cart
+  double get totalCost {
+    return _cartItems.fold(0.0, (sum, item) => sum + (item.costPrice * item.quantity));
   }
 
   void _removeFromCart(int index) {
@@ -87,6 +95,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         computerName: computer.name,
         quantity: newQty,
         unitPrice: computer.price,
+        costPrice: computer.costPrice,
         totalPrice: computer.price * newQty,
       );
     });
@@ -98,18 +107,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   Future<void> _completeSale() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    if (_cartItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add items to cart')),
-      );
-      return;
-    }
+    if (_cartItems.isEmpty) return;
 
     final salesProvider = Provider.of<SalesProvider>(context, listen: false);
+    final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    double totalCostCalculated = _cartItems.fold(0, (sum, item) => sum + (item.costPrice * item.quantity));
 
+
+    // 1. Prepare the Sale object with P&L data
     final sale = Sale(
-      userId: '',
+      userId: currentUid,
       saleNumber: salesProvider.generateSaleNumber(),
       customerId: '',
       customerName: _customerNameController.text.trim(),
@@ -117,29 +124,38 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       items: _cartItems,
       subtotal: subtotal,
       tax: 0,
-      total: subtotal,
+      total: subtotal, // This is your 'Revenue'
+      
+      // CRITICAL FOR REPORTS:
+      totalCost: totalCost, 
+      profit: subtotal - totalCost,
+      
       paymentMethod: 'Cash',
       createdAt: DateTime.now(),
     );
 
+    // 2. Save to Firebase
     final success = await salesProvider.createSale(sale);
 
-    if (!mounted) return;
+    if (mounted && success) {
+      // 3. Update Inventory Stock (Decrease quantity)
+      final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
+      for (var cartItem in _cartItems) {
+        final computer = inventoryProvider.computers.firstWhere((c) => c.id == cartItem.computerId);
+        int remainingQty = computer.quantity - cartItem.quantity;
+        
+        await inventoryProvider.updateComputer(
+          computer.id!, 
+          computer.copyWith(
+            quantity: remainingQty,
+            status: remainingQty <= 0 ? 'sold' : computer.status,
+          ),
+        );
+      }
 
-    if (success) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sale completed successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(salesProvider.errorMessage ?? 'Failed to create sale'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Sale Completed & Inventory Updated'), backgroundColor: Colors.green),
       );
     }
   }

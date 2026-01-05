@@ -4,7 +4,7 @@ class Computer {
   final String? id;
   final String userId;
   final String name;
-  final String category; // Desktop, Laptop, Server, Workstation
+  final String category;
   final String brand;
   final String processor;
   final String ram;
@@ -15,9 +15,11 @@ class Computer {
   final List<String> serialNumbers;
   final String description;
   final String? imageUrl;
-  final String status; // available, maintenance, sold, repair
+  final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double costPrice;
+  final String? imageBase64; 
 
   Computer({
     this.id,
@@ -30,6 +32,7 @@ class Computer {
     required this.storage,
     this.gpu = '',
     required this.price,
+    required this.costPrice,
     required this.quantity,
     this.serialNumbers = const [],
     this.description = '',
@@ -37,6 +40,7 @@ class Computer {
     this.status = 'available',
     required this.createdAt,
     required this.updatedAt,
+    this.imageBase64,
   });
 
   factory Computer.fromJson(Map<String, dynamic> json, String id) {
@@ -51,6 +55,7 @@ class Computer {
       storage: json['storage'] ?? '',
       gpu: json['gpu'] ?? '',
       price: (json['price'] ?? 0).toDouble(),
+      costPrice: (json['costPrice'] ?? 0.0).toDouble(),
       quantity: json['quantity'] ?? 0,
       serialNumbers: List<String>.from(json['serialNumbers'] ?? []),
       description: json['description'] ?? '',
@@ -58,6 +63,7 @@ class Computer {
       status: json['status'] ?? 'available',
       createdAt: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (json['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      imageBase64: json['imageBase64'] as String?,
     );
   }
 
@@ -72,6 +78,7 @@ class Computer {
       'storage': storage,
       'gpu': gpu,
       'price': price,
+      'costPrice': costPrice,
       'quantity': quantity,
       'serialNumbers': serialNumbers,
       'description': description,
@@ -79,9 +86,11 @@ class Computer {
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'imageBase64': imageBase64,
     };
   }
 
+  // FIXED: Added imageBase64 to copyWith
   Computer copyWith({
     String? id,
     String? userId,
@@ -93,6 +102,7 @@ class Computer {
     String? storage,
     String? gpu,
     double? price,
+    double? costPrice,
     int? quantity,
     List<String>? serialNumbers,
     String? description,
@@ -100,6 +110,7 @@ class Computer {
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? imageBase64, // ADDED
   }) {
     return Computer(
       id: id ?? this.id,
@@ -112,6 +123,7 @@ class Computer {
       storage: storage ?? this.storage,
       gpu: gpu ?? this.gpu,
       price: price ?? this.price,
+      costPrice: costPrice ?? this.costPrice,
       quantity: quantity ?? this.quantity,
       serialNumbers: serialNumbers ?? this.serialNumbers,
       description: description ?? this.description,
@@ -119,6 +131,7 @@ class Computer {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      imageBase64: imageBase64 ?? this.imageBase64, // ADDED
     );
   }
 }

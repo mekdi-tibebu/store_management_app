@@ -52,6 +52,7 @@ class SaleItem {
   final String computerName;
   final int quantity;
   final double unitPrice;
+  final double costPrice; // NEW: Buying price from Computer model
   final double totalPrice;
 
   SaleItem({
@@ -59,6 +60,7 @@ class SaleItem {
     required this.computerName,
     required this.quantity,
     required this.unitPrice,
+    required this.costPrice, // Required for P&L logic
     required this.totalPrice,
   });
 
@@ -68,6 +70,7 @@ class SaleItem {
       computerName: json['computerName'] ?? '',
       quantity: json['quantity'] ?? 0,
       unitPrice: (json['unitPrice'] ?? 0).toDouble(),
+      costPrice: (json['costPrice'] ?? 0).toDouble(), // NEW
       totalPrice: (json['totalPrice'] ?? 0).toDouble(),
     );
   }
@@ -78,6 +81,7 @@ class SaleItem {
       'computerName': computerName,
       'quantity': quantity,
       'unitPrice': unitPrice,
+      'costPrice': costPrice, // NEW
       'totalPrice': totalPrice,
     };
   }
@@ -93,9 +97,11 @@ class Sale {
   final List<SaleItem> items;
   final double subtotal;
   final double tax;
-  final double total;
+  final double total;      // This is Revenue
+  final double totalCost;  // NEW: Sum of all item costPrices
+  final double profit;     // NEW: total - totalCost
   final String paymentMethod;
-  final String status; // completed, cancelled
+  final String status; 
   final DateTime createdAt;
 
   Sale({
@@ -109,6 +115,8 @@ class Sale {
     required this.subtotal,
     this.tax = 0,
     required this.total,
+    required this.totalCost, // NEW
+    required this.profit,    // NEW
     required this.paymentMethod,
     this.status = 'completed',
     required this.createdAt,
@@ -131,6 +139,8 @@ class Sale {
       subtotal: (json['subtotal'] ?? 0).toDouble(),
       tax: (json['tax'] ?? 0).toDouble(),
       total: (json['total'] ?? 0).toDouble(),
+      totalCost: (json['totalCost'] ?? 0).toDouble(), // NEW
+      profit: (json['profit'] ?? 0).toDouble(),       // NEW
       paymentMethod: json['paymentMethod'] ?? '',
       status: json['status'] ?? 'completed',
       createdAt: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -148,6 +158,8 @@ class Sale {
       'subtotal': subtotal,
       'tax': tax,
       'total': total,
+      'totalCost': totalCost, // NEW: Saves total cost to DB
+      'profit': profit,       // NEW: Saves profit to DB
       'paymentMethod': paymentMethod,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),

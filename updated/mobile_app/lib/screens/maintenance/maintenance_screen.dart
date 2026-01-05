@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -173,6 +174,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                           status: data['status'] ?? 'maintenance',
                           dateAdded: (data['updatedAt'] as Timestamp?)?.toDate(),
                           notes: data['maintenanceNotes'] ?? '',
+                          imageBase64: data['imageBase64'],
                         );
                       },
                       childCount: docs.length,
@@ -193,7 +195,8 @@ class _MaintenanceCard extends StatelessWidget {
   final String brand;
   final String status;
   final DateTime? dateAdded;
-  final String notes;
+  final String notes; 
+  final String? imageBase64;
 
   const _MaintenanceCard({
     required this.name,
@@ -201,6 +204,7 @@ class _MaintenanceCard extends StatelessWidget {
     required this.status,
     this.dateAdded,
     required this.notes,
+    this.imageBase64,
   });
 
   @override
@@ -237,22 +241,36 @@ class _MaintenanceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  width: 65, 
+                  height: 65,
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    isRepair ? Icons.build_circle : Icons.settings,
-                    color: statusColor,
-                    size: 28,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: (imageBase64 != null && imageBase64!.isNotEmpty)
+                        ? Image.memory(
+                            base64Decode(imageBase64!),
+                            fit: BoxFit.cover,
+                            // If the Base64 string is corrupted, show the icon
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              isRepair ? Icons.build_circle : Icons.settings,
+                              color: statusColor,
+                              size: 28,
+                            ),
+                          )
+                        : Icon(
+                            isRepair ? Icons.build_circle : Icons.settings,
+                            color: statusColor,
+                            size: 28,
+                          ),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,16 +283,7 @@ class _MaintenanceCard extends StatelessWidget {
                           color: Colors.blue.shade900,
                         ),
                       ),
-                      if (brand.isNotEmpty) ...[
-                        SizedBox(height: 4),
-                        Text(
-                          brand,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
+                      // ... rest of your name/brand labels ...
                     ],
                   ),
                 ),
