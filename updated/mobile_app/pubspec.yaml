@@ -50,9 +50,9 @@ flutter:
     - assets/images/
     - assets/icons/
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/app_icon.png"
+  image_path: "assets/icons/app_icon.png"
   adaptive_icon_background: "#667eea"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  adaptive_icon_foreground: "assets/icons/app_icon.png"
